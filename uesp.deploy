@@ -1,0 +1,14 @@
+#
+# Deployment file for the UESP Legends raw data database and related apps.
+#
+
+name = uesp.legendsrawdata
+staged = true
+
+ignore = .hg*
+ignore = *.deploy
+ignore = *.sh
+ignore = *.sql
+ignore = cron*
+
+dest = content3.uesp.net:/home/uesp/legendsrawdata/www/

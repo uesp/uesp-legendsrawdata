@@ -1,0 +1,31 @@
+<!DOCTYPE HTML>
+<html>
+	<head>
+		<title>UESP:Legends View Raw Data</title>
+		<meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
+		<link rel="stylesheet" href="//legendsrawdata.uesp.net/resources/legendsrawdata.css" />
+		<script type="text/javascript" src="//legendsrawdata.uesp.net/resources/jquery-3.3.1.min.js"></script>
+		<script type="text/javascript" src="//legendsrawdata.uesp.net/resources/legendsrawdata.js"></script>
+	</head>
+<body>
+{breadcrumbTrail}
+<h1>UESP:Legends View Raw Data {subTitle}</h1>
+
+{content}
+
+<div id="lrdSearchForm">
+	<form method="get" action="">
+		<input type="search" name="search" value="{searchText}" maxlength="64" size="32">
+		<input type="submit" value="Search...">
+		<br>
+	</form>
+</div>
+
+<hr>
+<div id="lrdFooter">
+This content is made available by the <a href="//www.uesp.net">Unofficial Elder Scrolls Pages (UESP)</a>. Contact <a href="mailto:dave@uesp.net">Daveh</a> for information regarding this page.
+Source code for this project is available at <a href="https://bitbucket.org/uesp/legendsrawdata">Bitbucket</a>.
+</div>
+</div>
+</body>
+</html>
