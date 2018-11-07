@@ -71,6 +71,16 @@ class CUespParseLegendsTextAssets
 		$result = $this->db->query($query);
 		if ($result === FALSE) return $this->reportError("Failed to create expandedJson table!\n".$this->db->error);
 		
+		$query = "TRUNCATE TABLE rawJson";
+		$this->lastQuery = $query;
+		$result = $this->db->query($query);
+		if ($result === FALSE) return $this->reportError("Failed to truncate expandedJson table!\n".$this->db->error);
+		
+		$query = "TRUNCATE TABLE expandedJson";
+		$this->lastQuery = $query;
+		$result = $this->db->query($query);
+		if ($result === FALSE) return $this->reportError("Failed to truncate rawJson table!\n".$this->db->error);
+		
 		return true;
 	}
 	
@@ -150,9 +160,9 @@ class CUespParseLegendsTextAssets
 	}
 	
 	
-	function parseTextAssetFile($filename)
+	function parseTextAssetFile($filename, $baseFilename)
 	{
-		$baseFilename = pathinfo($filename, PATHINFO_FILENAME);
+		//$baseFilename = pathinfo($filename, PATHINFO_FILENAME);
 		
 		print("Parsing JSON file '$baseFilename'...\n");
 				
@@ -175,16 +185,23 @@ class CUespParseLegendsTextAssets
 	
 	function parseAll()
 	{
-		print("Parsing all JSON files in '".self::TEXTASSET_PATH."'...\n");
+		print("Parsing all JSON files under '".self::TEXTASSET_PATH."'...\n");
 		
-		$dir = new DirectoryIterator(self::TEXTASSET_PATH);
+		$rii = new RecursiveIteratorIterator(new RecursiveDirectoryIterator(self::TEXTASSET_PATH));
+		$files = array(); 
+
+		foreach ($rii as $file) {
 		
-		foreach ($dir as $fileinfo) 
-		{
-    		if (!$fileinfo->isDot()) 
-    		{
-        		$this->parseTextAssetFile(self::TEXTASSET_PATH . $fileinfo->getFilename());
-    		}
+		    if ($file->isDir()){ 
+		        continue;
+		    }
+		
+		    $files[] = $file->getPathname();
+		    //print($file->getPathname() . "\n");
+		    $baseName = str_replace(self::TEXTASSET_PATH, "", $file->getPathname());
+		    $baseName = str_replace(".txt", "", $baseName);
+		    
+		    $this->parseTextAssetFile($file->getPathname(), $baseName);
 		}
 		
 		print("Parsed {$this->filesParsed} files and {$this->dataParsed} data!\n");

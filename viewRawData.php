@@ -10,6 +10,8 @@ class CUespViewLegendsRawData
 	const SPRITE_URL = "/sprites/";
 	const PARSE_IMAGE_LINKS = true;
 	const PARSE_NAME_LINKS = true;
+	const PARSE_RAWKEYS = true;
+	const RAWKEY_LOCALIZATION = "assets/appbase/localization/text/en_us/data";
 	
 	public $inputParams = array();
 	
@@ -19,6 +21,7 @@ class CUespViewLegendsRawData
 	
 	public $rawTextAssets = array();
 	public $expandedJson = array();	
+	public $rawKeys = array();
 	
 	public $htmlTemplate = "";
 	public $templateFile = "";
@@ -141,6 +144,34 @@ class CUespViewLegendsRawData
 	}
 	
 	
+	public function getRawKey($id)
+	{
+		if ($this->rawKeys[$id] != null) return '"' . $this->rawKeys[$id] . '" (' . $id . ')';
+		return $id;
+	}
+	
+	
+	public function loadRawKeys()
+	{
+		$safeName = $this->db->real_escape_string(self::RAWKEY_LOCALIZATION);
+		$this->lastQuery = "SELECT * FROM rawJson WHERE name='$safeName' LIMIT 1;";
+		$result = $this->db->query($this->lastQuery);
+		if ($result === false) return $this->reportError("Failed to load rawkey data from rawJson table!");
+		
+		$row = $result->fetch_assoc();
+		
+		$this->rawKeys = json_decode($row['value'], true);
+		
+		if ($this->rawKeys == NULL) 
+		{
+			$this->rawKeys = array();
+			return  $this->reportError("Failed to parse rawkey data from '$safeName'!");
+		}		
+		
+		return true;
+	}
+	
+	
 	public function loadSearchResults()
 	{
 		if (!$this->InitDatabase()) return false;
@@ -190,6 +221,8 @@ class CUespViewLegendsRawData
 	{
 		if (!$this->InitDatabase()) return false;
 		
+		$this->loadRawKeys();
+		
 		$safeName = $this->db->real_escape_string($assetName);
 		
 		$this->lastQuery = "SELECT * FROM rawJson WHERE name='$safeName';";
@@ -214,7 +247,7 @@ class CUespViewLegendsRawData
 		
 		$parts = explode(".", $name);
 		$rootName = array_shift($parts);
-		$safeName = $this->urlescape($rootName);
+		$safeName = $this->escape($rootName);
 		$safeUrlName = $this->urlescape($rootName);
 		
 		$output = "<a href='?rootid=$safeUrlName'>$safeName</a>";
@@ -225,7 +258,7 @@ class CUespViewLegendsRawData
 		{
 			$prefixName .= ".$name";
 			
-			$safeName = $this->urlescape($name);
+			$safeName = $this->escape($name);
 			$safeUrlName = $this->urlescape($prefixName);
 			$output .= ".<a href='?prefixid=$safeUrlName'>$safeName</a>";
 		}
@@ -234,7 +267,22 @@ class CUespViewLegendsRawData
 	}
 	
 	
-	public function createImageLinks($value)
+	public function translateRawKeys($value)
+	{
+		if (!self::PARSE_RAWKEYS) return $value;
+		//"RawKey": "8d251733-e61b-4267-8e09-f9f0fb7b7303-additional_search_tokens"
+		$self = $this;
+		
+		$output = preg_replace_callback('/"RawKey": "([a-zA-Z0-9\-\._]+)"/i', function ($matches) use ($self) {
+				$rawKey = $self->getRawKey($matches[1]);
+				return '"RawKey": ' . $rawKey;
+			}, $value);
+		
+		return $output;
+	}
+	
+	
+	public function createImageLinksFlat($value)
 	{
 		if (!self::PARSE_IMAGE_LINKS) return $value;
 		
@@ -243,6 +291,25 @@ class CUespViewLegendsRawData
 		$output = preg_replace('/(ContentPack000\/Images\/[a-zA-Z_0-9\/\-]+\/)([a-zA-Z_0-9\-]+)$/i', '$1<a href="' . self::SPRITE_URL .'$2.png">$2</a>', $output);
 		$output = preg_replace('/(ContentPack000\/Cards\/Visuals\/[a-zA-Z_0-9\/\-]+\/)([a-zA-Z_0-9\-]+)$/i', '$1<a href="' . self::SPRITE_URL .'$2.png">$2</a>', $output);
 		$output = preg_replace('/\"(ContentPack000\/Cards\/Visuals\/[a-zA-Z_0-9\/\-]+\/)([a-zA-Z_0-9\-]+)\"/i', '"$1<a href="' . self::SPRITE_URL .'$2.png">$2</a>"', $output);
+			
+		return $output;
+	}
+	
+	
+	public function createImageLinks($value)
+	{
+		if (!self::PARSE_IMAGE_LINKS) return $value;
+		
+		$output = $value;
+		
+		$output = preg_replace('/(ContentPack000\/[a-zA-Z_0-9\' \/\-]+\/)([a-z \[\]A-Z_0-9\-]+\.png)/i', '<a href="' . self::SPRITE_URL .'assets/$1$2">$1$2</a>', $output);
+		$output = preg_replace('/(appbase\/[a-zA-Z_0-9\' \/\-]+\/)([a-z \[\]A-Z_0-9\-]+\.png)/i', '<a href="' . self::SPRITE_URL .'assets/$1$2">$1$2</a>', $output);
+		
+		$output = preg_replace('/(ContentPack000\/[a-zA-Z_0-9\' \/\-]+\/)([a-z \[\]A-Z_0-9\-]+_png(?!\.png))/i', '<a href="' . self::SPRITE_URL .'assets/$1$2.png">$1$2</a>', $output);
+		$output = preg_replace('/(appbase\/[a-zA-Z_0-9\' \/\-]+\/)([a-z \[\]A-Z_0-9\-]+_png(?!\.png))/i', '<a href="' . self::SPRITE_URL .'assets/$1$2">$1$2.png</a>', $output);
+		
+		$output = preg_replace('/(ContentPack000\/[a-zA-Z_0-9\' \/\-]+\/)([a-z \[\]A-Z_0-9\-]+)\"/i', '<a href="' . self::SPRITE_URL .'assets/$1$2.png">$1$2</a>"', $output);
+		$output = preg_replace('/(appbase\/[a-zA-Z_0-9\' \/\-]+\/)([a-z \[\]A-Z_0-9\-]+)\"/i', '<a href="' . self::SPRITE_URL .'assets/$1$2.png">$1$2</a>"', $output);
 			
 		return $output;
 	}
@@ -286,6 +353,7 @@ class CUespViewLegendsRawData
 		
 		$safeValue = $this->escapenoquotes($value);
 		$safeValue = $this->createImageLinks($safeValue);
+		$safeValue = $this->translateRawKeys($safeValue);		
 		
 		$output  = "<pre class='lrdCodeBlock'>";
 		$output .= $safeValue;
