@@ -55,7 +55,7 @@ class CUespParseLegendsTextAssets
 						name TINYTEXT NOT NULL,
 						value LONGTEXT NOT NULL,
 						PRIMARY KEY (name(100))
-					);";
+					) ENGINE=MYISAM;";
 		
 		$this->lastQuery = $query;
 		$result = $this->db->query($query);
@@ -65,7 +65,7 @@ class CUespParseLegendsTextAssets
 						name TEXT NOT NULL,
 						value TEXT NOT NULL,
 						PRIMARY KEY (name(256))
-					);";
+					) ENGINE=MYISAM;";
 		
 		$this->lastQuery = $query;
 		$result = $this->db->query($query);
